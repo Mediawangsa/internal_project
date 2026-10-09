@@ -1,0 +1,47 @@
+name: Studio Pertiwi - imej 2 minggu
+
+on:
+  schedule:
+    # 23:00 UTC = 07:00 pagi Malaysia (UTC+8). GitHub boleh lewat 10-30 minit.
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+    inputs:
+      sentiasa:
+        description: "Hantar walaupun Sabtu/Ahad kosong (untuk ujian manual)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-pertiwi-imej
+  cancel-in-progress: false
+
+jobs:
+  hantar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: studio-pertiwi/cara2/requirements.txt
+
+      - name: Pasang kebergantungan
+        run: |
+          pip install -r studio-pertiwi/cara2/requirements.txt
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+
+      - name: Jana & hantar imej
+        env:
+          ICAL_URL: ${{ secrets.ICAL_URL }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HANTAR_FAIL_PENUH: ${{ vars.HANTAR_FAIL_PENUH }}
+        run: >
+          python studio-pertiwi/cara2/imej_ringkasan.py
+          ${{ github.event.inputs.sentiasa == 'true' && '--sentiasa' || '' }}

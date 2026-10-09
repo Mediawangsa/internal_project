@@ -154,7 +154,7 @@ Trigger Apps Script berjalan sembarang masa antara 7:00–8:00. Jika mahu tepat:
 
 ## Cara 2 (upgrade kemudian): imej lebih cantik
 
-GitHub Actions + Python (Pillow) membaca iCal rahsia calendar dan lukis imej sendiri; tapi hantaran boleh lewat 10–30 minit. Mulakan Cara 1 dulu. Bila sedia, beritahu saya dan saya sediakan skrip dan workflow.
+GitHub Actions + Python (Pillow) membaca iCal rahsia calendar dan lukis imej sendiri; hantaran boleh lewat 10–30 minit. Skrip sudah siap: lihat **`PANDUAN-CARA2.md`**. Mulakan dengan Cara 1 dahulu.
 
 ---
 

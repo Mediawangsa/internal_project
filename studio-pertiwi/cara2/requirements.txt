@@ -1,0 +1,4 @@
+Pillow>=10.1
+icalendar>=5.0
+recurring-ical-events>=2.1
+requests>=2.31

@@ -23,6 +23,7 @@ const CONFIG = {
   JAM_POST: 7,                 // trigger harian (tetingkap 7-8 pagi)
   HARI_IMEJ: 14,               // bilangan hari dalam imej (susun 2 lajur)
   UMUM_TEMPAHAN_BARU: true,    // bot post "✅ ditempah" bila tempahan berjaya
+  HANTAR_IMEJ: true,           // false jika guna Cara 2 (GitHub Actions) untuk imej
   HANTAR_FAIL_PENUH: false,    // true = hantar juga fail PNG kualiti penuh
   IMEJ_HUJUNG_MINGGU_KOSONG: false // true = hantar imej walaupun post Sabtu/Ahad senyap
 };
@@ -228,7 +229,7 @@ function hantarHarian(paksa) {
 
   if (!acara.length && hujungMinggu) {
     setProp_('HARIAN_TERAKHIR', kunci);
-    if (CONFIG.IMEJ_HUJUNG_MINGGU_KOSONG) hantarImej_();
+    if (CONFIG.HANTAR_IMEJ && CONFIG.IMEJ_HUJUNG_MINGGU_KOSONG) hantarImej_();
     return 'senyap (hujung minggu kosong)';
   }
 
@@ -246,6 +247,7 @@ function hantarHarian(paksa) {
   hantarTeks_(teks);
   setProp_('HARIAN_TERAKHIR', kunci);
 
+  if (!CONFIG.HANTAR_IMEJ) return 'dihantar (tanpa imej)';
   try {
     hantarImej_();
   } catch (err) {
