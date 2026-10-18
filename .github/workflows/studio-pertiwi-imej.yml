@@ -20,12 +20,15 @@ concurrency:
 
 jobs:
   hantar:
+    # Jadual hanya jalan selepas repository variable CARA2_AKTIF = true (lihat PANDUAN-CARA2.md).
+    # Sebelum itu job dilangkau (tiada e-mel "Run failed"). Run manual sentiasa dibenarkan.
+    if: github.event_name == 'workflow_dispatch' || vars.CARA2_AKTIF == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip

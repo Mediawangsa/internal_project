@@ -8,6 +8,9 @@ Fail:
 - `../.github/workflows/studio-pertiwi-imej.yml`: jadual harian 7:00 (23:00 UTC)
 
 > **Penting:** guna repo **private**. Alamat iCal rahsia memberi akses baca calendar kepada sesiapa yang ada. Ia disimpan sebagai GitHub Secret (tidak dalam kod).
+> Repo `Mediawangsa/internal_project` kini **awam (public)**: sesiapa boleh baca kod dan log Actions. Tukar ke private: Settings > General > Danger Zone > **Change visibility** > Make private. Kos tetap RM0 (job ini guna ~30 minit sebulan daripada 2,000 minit percuma untuk repo private).
+>
+> Workflow **tidak jalan ikut jadual** sehingga awak tetapkan `CARA2_AKTIF` (Langkah 4). Ini elak e-mel "Run failed" setiap pagi semasa setup belum siap.
 
 ## Langkah 1 – Matikan imej Cara 1
 Dalam `Kod.gs` tukar `HANTAR_IMEJ: true` kepada `false`, simpan. (Teks harian oleh Apps Script kekal.)
@@ -30,14 +33,17 @@ Repo > **Settings > Secrets and variables > Actions > New repository secret**:
 
 Pilihan: tab **Variables** > `HANTAR_FAIL_PENUH` = `true` untuk hantar juga fail PNG kualiti penuh (1350×2400).
 
-## Langkah 4 – Pastikan workflow ada pada cabang utama
-Jadual (`schedule`) hanya berjalan dari **cabang lalai** repo. Gabungkan (merge) cabang ini ke cabang lalai, kemudian buka tab **Actions** dan benarkan workflow jika diminta.
+## Langkah 4 – Uji dahulu, kemudian aktifkan jadual
+1. **Actions** > "Studio Pertiwi - imej 2 minggu" > **Run workflow** (kotak "sentiasa" ditanda). Dalam 1–2 minit, group terima foto. Jika gagal, log akan sebut secret mana yang belum diisi.
+2. Bila berjaya: Settings > Secrets and variables > Actions > tab **Variables** > **New repository variable** > nama `CARA2_AKTIF`, nilai `true`. Mulai esok, jadual 7 pagi berjalan.
+3. Untuk berhenti sementara: tukar `CARA2_AKTIF` kepada `false` (atau Actions > workflow > **Disable workflow**).
 
-## Langkah 5 – Ujian
-1. **Actions** > "Studio Pertiwi - imej 2 minggu" > **Run workflow** (kotak "sentiasa" ditanda). Dalam 1–2 minit, group terima foto.
-2. Semak foto: hari ini kuning, tempahan betul, tiada nama peribadi di luar Studio.
-3. Tempah satu slot melalui borang, run semula, pastikan muncul. Nota: **feed iCal Google kadang-kadang lewat beberapa minit hingga jam** menunjukkan perubahan terkini. Untuk imej pagi ini biasanya tak jadi masalah, tetapi tempahan yang dibuat beberapa minit sebelum 7 pagi mungkin belum muncul.
-4. Esok pagi semak imej tiba ± 7:10–7:30.
+Nota: jadual (`schedule`) hanya berjalan dari **cabang lalai** repo. Cabang lalai repo ini ialah `claude/studio-pertiwi-booking-7uh83g` (repo kosong semasa push pertama), jadi tiada merge diperlukan.
+
+## Langkah 5 – Semak hasil
+1. Semak foto: hari ini kuning, tempahan betul, tiada nama peribadi di luar Studio.
+2. Tempah satu slot melalui borang, run semula, pastikan muncul. Nota: **feed iCal Google kadang-kadang lewat beberapa minit hingga jam** menunjukkan perubahan terkini. Untuk imej pagi ini biasanya tak jadi masalah, tetapi tempahan yang dibuat beberapa minit sebelum 7 pagi mungkin belum muncul.
+3. Selepas `CARA2_AKTIF` ditetapkan, esok pagi semak imej tiba ± 7:10–7:30.
 
 Ujian di komputer sendiri (tanpa Telegram): `pip install -r cara2/requirements.txt`, kemudian
 `python cara2/imej_ringkasan.py --ical fail.ics --keluar imej.png --tiada-hantar --sentiasa`
@@ -47,6 +53,6 @@ Ujian di komputer sendiri (tanpa Telegram): `pip install -r cara2/requirements.t
 - Sabtu/Ahad: senyap jika tiada tempahan hari itu (sama seperti teks harian). Untuk sentiasa hantar (termasuk hujung minggu kosong), tambah `--sentiasa` pada arahan `python` dalam fail workflow.
 
 ## Selenggara
-- Workflow dilumpuhkan GitHub selepas 60 hari tiada aktiviti repo **hanya untuk repo awam**; repo private tidak terkesan.
+- Untuk repo **awam**, GitHub melumpuhkan jadual selepas 60 hari tiada aktiviti repo (repo ini masih awam: tukar ke private untuk elak). Repo private tidak terkesan.
 - Jika imej tak sampai: **Actions** > klik run yang gagal > baca log. Ralat Telegram `chat not found` = ID salah. `Gagal ambil iCal: HTTP 404` = URL rahsia sudah di-reset, kemas kini Secret `ICAL_URL`.
 - Tukar rupa (warna, saiz fon, bilangan hari): ubah pemalar di atas `imej_ringkasan.py` (`WARNA`, `BILANGAN_HARI`, `MAKS_BARIS`).

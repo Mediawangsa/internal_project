@@ -32,7 +32,7 @@ Anda mungkin tak boleh tukar tetapan ini; kalau ujian di Langkah 8 gagal, minta 
 | **Akses ke API luar (UrlFetchApp ke Telegram)** | Ralat "Access to … is not allowed" atau `api.telegram.org` ditolak semasa `ujiTelegram` | Jalankan `ujiTelegram` (Langkah 5). Admin: Security > API controls, dan semak sama ada ada "allowlist" URL untuk Apps Script |
 | **Perkongsian Calendar dalam organisasi** | Team tak nampak calendar | Calendar > Settings calendar > "Access permissions". Admin: Apps > Google Workspace > Calendar > Sharing settings (perlu benarkan "Share within organization / See all event details") |
 | **Google Forms dibenarkan** | Tak boleh cipta Form | Cuba buka <https://forms.google.com> |
-| **Apps issue "app belum disahkan"** | Skrin amaran semasa authorize | Normal untuk skrip sendiri. Klik **Advanced > Go to … (unsafe)**. Jika disekat sepenuhnya, admin perlu benarkan skrip anda |
+| **Amaran "app belum disahkan"** | Skrin amaran semasa authorize | Normal untuk skrip sendiri. Klik **Advanced > Go to … (unsafe)**. Jika disekat sepenuhnya, admin perlu benarkan skrip anda |
 | **Kuota** | Jarang berlaku di sini | Penggunaan kita sangat kecil berbanding had harian |
 
 ---

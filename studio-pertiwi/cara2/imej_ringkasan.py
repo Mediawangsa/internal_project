@@ -235,8 +235,12 @@ def main():
                    help="hantar walaupun Sabtu/Ahad kosong (lalai: senyap, ikut Cara 1)")
     p.add_argument("--tarikh", help="anggap hari ini ialah yyyy-mm-dd (ujian)")
     a = p.parse_args()
-    if not a.ical:
-        sys.exit("ICAL_URL belum ditetapkan.")
+    tiada = [] if a.ical else ["ICAL_URL"]
+    if not a.tiada_hantar:
+        tiada += [k for k in ("TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID") if not os.environ.get(k)]
+    if tiada:
+        sys.exit("Secret belum ditetapkan: " + ", ".join(tiada) +
+                 ". Isi di GitHub > Settings > Secrets and variables > Actions.")
 
     sekarang = dt.datetime.now(TZ)
     if a.tarikh:
