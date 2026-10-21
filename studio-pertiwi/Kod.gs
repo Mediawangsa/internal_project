@@ -322,8 +322,8 @@ function buatImejDuaMinggu_(kualitiPenuh) {
   const tajuk = slide.insertTextBox('STUDIO PERTIWI\nTempahan ' + n + ' hari · kemas kini ' +
     tarikhPanjang_(kini) + ', ' + jamTeks_(kini, true), M, 6, W - 2 * M, 48);
   const tt = tajuk.getText();
-  tt.getTextStyle().setFontFamily('Roboto').setFontSize(10).setForegroundColor('#5F6368');
-  tt.getRange(0, 14).getTextStyle().setFontSize(18).setBold(true).setForegroundColor('#202124');
+  tt.getTextStyle().setFontFamily('Roboto').setFontSize(11).setForegroundColor('#5F6368');
+  tt.getRange(0, 14).getTextStyle().setFontSize(20).setBold(true).setForegroundColor('#202124');
 
   for (let i = 0; i < n; i++) {
     const d = tambahHari_(hari0, i);
@@ -344,7 +344,7 @@ function buatImejDuaMinggu_(kualitiPenuh) {
 
     const tajukKotak = HARI_PENDEK[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + (hariIni ? '  · HARI INI' : '');
     const senarai = (timbunan[kunciTarikh_(d)] || []).slice().sort(function (a, b) { return a.getStartTime() - b.getStartTime(); });
-    const MAKS = 5;
+    const MAKS = 4; // termasuk baris "+N lagi"
     let baris_ = senarai.map(function (ev) { return ringkas_(ev); });
     if (baris_.length > MAKS) {
       const lebih = baris_.length - (MAKS - 1);
@@ -356,9 +356,9 @@ function buatImejDuaMinggu_(kualitiPenuh) {
     const tr = kotak.getText();
     tr.setText(teks);
     tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.START);
-    tr.getTextStyle().setFontFamily('Roboto').setFontSize(10).setBold(false)
+    tr.getTextStyle().setFontFamily('Roboto').setFontSize(13).setBold(false)
       .setForegroundColor(kosong ? '#9AA0A6' : '#202124');
-    tr.getRange(0, tajukKotak.length).getTextStyle().setBold(true).setFontSize(10.5).setForegroundColor('#202124');
+    tr.getRange(0, tajukKotak.length).getTextStyle().setBold(true).setFontSize(14).setForegroundColor('#202124');
   }
 
   const slideId = slide.getObjectId();
