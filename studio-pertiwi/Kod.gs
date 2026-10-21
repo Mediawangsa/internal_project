@@ -124,14 +124,23 @@ function prosesTempahan_(nama, tarikhStr, mulaStr, tamatStr, tujuan) {
   const minTamat = parseMasa_(tamatStr);
   const mula = tarikhMasa_(tarikhStr, minMula);
   const tamat = tarikhMasa_(tarikhStr, minTamat);
-  const label = tarikhPanjang_(mula) + ', ' + rentang_(mula, tamat);
+  const pautanBorang = '👉 Sila isi borang semula: ' + wajibFormUrl_('FORM_TEMPAH_ID');
 
   if (minTamat <= minMula) {
-    hantarTeks_('❌ <b>' + esc_(nama) + '</b>: masa tamat mesti selepas masa mula (' + esc_(mulaStr) + ' → ' + esc_(tamatStr) + '). Sila isi borang semula.');
+    hantarTeks_(kad_('❌ TEMPAHAN DITOLAK – masa tidak sah', [
+      '👤 ' + esc_(nama),
+      '📅 ' + tarikhPanjang_(mula) + ' · ' + esc_(mulaStr) + ' → ' + esc_(tamatStr),
+      '⚠️ Masa tamat mesti selepas masa mula.',
+      pautanBorang
+    ]));
     return 'tidak sah';
   }
   if (mula.getTime() < Date.now()) {
-    hantarTeks_('❌ <b>' + esc_(nama) + '</b>: masa ' + esc_(label) + ' sudah berlalu. Sila pilih masa akan datang.');
+    hantarTeks_(kad_('❌ TEMPAHAN DITOLAK – masa sudah berlalu', [
+      '👤 ' + esc_(nama),
+      '📅 ' + tarikhPanjang_(mula) + ' · ' + rentang_(mula, tamat),
+      pautanBorang
+    ]));
     return 'lepas';
   }
 
@@ -157,14 +166,22 @@ function prosesTempahan_(nama, tarikhStr, mulaStr, tamatStr, tujuan) {
   }
 
   if (bertindih.length) {
-    const senarai = bertindih.map(function (ev) {
-      return esc_(ev.getTitle()) + ' ' + rentang_(ev.getStartTime(), ev.getEndTime());
-    }).join(', ');
-    hantarTeks_('❌ <b>' + esc_(nama) + '</b>: ' + esc_(label) + ' bertindih dengan <b>' + senarai + '</b>. Sila pilih masa lain.');
+    const sedia = bertindih.map(function (ev) {
+      return '   • ' + rentang_(ev.getStartTime(), ev.getEndTime()) + ' – ' + penempah_(ev);
+    });
+    hantarTeks_(kad_('❌ TEMPAHAN DITOLAK – masa bertindih', [
+      '👤 ' + esc_(nama),
+      '📅 ' + tarikhPanjang_(mula) + ' · ' + rentang_(mula, tamat),
+      '⛔ Sudah ditempah:'
+    ].concat(sedia, ['👉 Sila pilih masa lain: ' + wajibFormUrl_('FORM_TEMPAH_ID')])));
     return 'bertindih';
   }
   if (CONFIG.UMUM_TEMPAHAN_BARU) {
-    hantarTeks_('✅ Studio ditempah: ' + esc_(label) + ' · ' + esc_(tujuan) + ' (' + esc_(nama) + ')');
+    hantarTeks_(kad_('✅ TEMPAHAN BERJAYA', [
+      '👤 ' + esc_(nama),
+      '📅 ' + tarikhPanjang_(mula) + ' · ' + rentang_(mula, tamat),
+      '🎯 ' + esc_(tujuan)
+    ]));
   }
   return 'berjaya';
 }
@@ -190,7 +207,7 @@ function prosesBatal_(nama, tarikhStr, mulaStr) {
       return ev.getStartTime().getTime() === mula.getTime() && padanNama_(ev, nama);
     });
     dipadam = dipadam.map(function (ev) {
-      const maklumat = { tajuk: ev.getTitle(), mula: ev.getStartTime(), tamat: ev.getEndTime() };
+      const maklumat = { penempah: penempah_(ev), mula: ev.getStartTime(), tamat: ev.getEndTime() };
       ev.deleteEvent();
       return maklumat;
     });
@@ -199,13 +216,19 @@ function prosesBatal_(nama, tarikhStr, mulaStr) {
   }
 
   if (!dipadam.length) {
-    hantarTeks_('⚠️ Cuba batal tempahan <b>' + esc_(nama) + '</b> pada ' + tarikhPanjang_(mula) + ' ' + esc_(mulaStr) +
-      ' tetapi tiada padanan. Semak nama/tarikh/masa mula (mesti sama dengan tempahan asal).');
+    hantarTeks_(kad_('⚠️ PEMBATALAN GAGAL – tempahan tidak dijumpai', [
+      '👤 ' + esc_(nama),
+      '📅 ' + tarikhPanjang_(mula) + ' · mula ' + esc_(mulaStr),
+      'Semak nama, tarikh dan masa mula (mesti sama seperti semasa tempah).'
+    ]));
     return 'tiada';
   }
   dipadam.forEach(function (m) {
-    hantarTeks_('🗑 Tempahan <b>' + esc_(nama) + '</b> dibatalkan: ' + tarikhPanjang_(m.mula) + ', ' +
-      rentang_(m.mula, m.tamat) + ' (' + esc_(m.tajuk) + '). Slot kosong semula.');
+    hantarTeks_(kad_('🗑 TEMPAHAN DIBATALKAN', [
+      '👤 ' + m.penempah,
+      '📅 ' + tarikhPanjang_(m.mula) + ' · ' + rentang_(m.mula, m.tamat),
+      '✅ Slot ini kosong semula.'
+    ]));
   });
   return 'dibatalkan';
 }
@@ -467,6 +490,15 @@ function acaraAntara_(dari, hingga) {
 function tajukAcara_(ev) {
   const nama = ev.getTag('nama'), tujuan = ev.getTag('tujuan');
   return nama && tujuan ? tujuan + ' (' + nama + ')' : ev.getTitle();
+}
+
+/** Mesej bot: tajuk tebal + satu maklumat sebaris. */
+function kad_(tajuk, baris) { return '<b>' + tajuk + '</b>\n' + baris.join('\n'); }
+
+/** "Nama (Tujuan)" untuk mesej bot; event manual guna tajuknya. */
+function penempah_(ev) {
+  const nama = ev.getTag('nama'), tujuan = ev.getTag('tujuan');
+  return nama ? '<b>' + esc_(nama) + '</b>' + (tujuan ? ' (' + esc_(tujuan) + ')' : '') : '<b>' + esc_(ev.getTitle()) + '</b>';
 }
 
 function padanNama_(ev, nama) {
