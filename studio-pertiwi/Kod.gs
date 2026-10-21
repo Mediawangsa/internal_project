@@ -304,7 +304,8 @@ function buatImejDuaMinggu_(kualitiPenuh) {
   slide.getBackground().setSolidFill('#FFFFFF');
 
   const W = pres.getPageWidth(), H = pres.getPageHeight();
-  const M = 12, G = 6, Y0 = 58;
+  const k = W / 450; // reka letak asal untuk 450pt lebar; skala ikut saiz halaman sebenar
+  const M = 12 * k, G = 6 * k, Y0 = 58 * k;
   const n = CONFIG.HARI_IMEJ;
   const baris = Math.ceil(n / 2);
   const lebar = (W - 2 * M - G) / 2;
@@ -320,10 +321,10 @@ function buatImejDuaMinggu_(kualitiPenuh) {
 
   // Tajuk
   const tajuk = slide.insertTextBox('STUDIO PERTIWI\nTempahan ' + n + ' hari · kemas kini ' +
-    tarikhPanjang_(kini) + ', ' + jamTeks_(kini, true), M, 6, W - 2 * M, 48);
+    tarikhPanjang_(kini) + ', ' + jamTeks_(kini, true), M, 6 * k, W - 2 * M, 48 * k);
   const tt = tajuk.getText();
-  tt.getTextStyle().setFontFamily('Roboto').setFontSize(11).setForegroundColor('#5F6368');
-  tt.getRange(0, 14).getTextStyle().setFontSize(20).setBold(true).setForegroundColor('#202124');
+  tt.getTextStyle().setFontFamily('Roboto').setFontSize(11 * k).setForegroundColor('#5F6368');
+  tt.getRange(0, 14).getTextStyle().setFontSize(20 * k).setBold(true).setForegroundColor('#202124');
 
   for (let i = 0; i < n; i++) {
     const d = tambahHari_(hari0, i);
@@ -336,7 +337,7 @@ function buatImejDuaMinggu_(kualitiPenuh) {
     kotak.getFill().setSolidFill(hariIni ? '#FFE08A' : hujungMgg ? '#E8EAFD' : '#F1F3F4');
     if (hariIni) {
       kotak.getBorder().getLineFill().setSolidFill('#E65100');
-      kotak.getBorder().setWeight(2.5);
+      kotak.getBorder().setWeight(2.5 * k);
     } else {
       kotak.getBorder().setTransparent();
     }
@@ -356,9 +357,9 @@ function buatImejDuaMinggu_(kualitiPenuh) {
     const tr = kotak.getText();
     tr.setText(teks);
     tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.START);
-    tr.getTextStyle().setFontFamily('Roboto').setFontSize(13).setBold(false)
+    tr.getTextStyle().setFontFamily('Roboto').setFontSize(13 * k).setBold(false)
       .setForegroundColor(kosong ? '#9AA0A6' : '#202124');
-    tr.getRange(0, tajukKotak.length).getTextStyle().setBold(true).setFontSize(14).setForegroundColor('#202124');
+    tr.getRange(0, tajukKotak.length).getTextStyle().setBold(true).setFontSize(14 * k).setForegroundColor('#202124');
   }
 
   const slideId = slide.getObjectId();
