@@ -464,7 +464,11 @@ function wajib_(k) {
   if (!v) throw new Error('Tetapan "' + k + '" belum diisi. Rujuk PANDUAN.md.');
   return v;
 }
-function wajibFormUrl_(kunciId) { return FormApp.openById(wajib_(kunciId)).getPublishedUrl(); }
+/** Link borang. Script Property LINK_TEMPAH / LINK_BATAL (link pendek) diutamakan jika diisi. */
+function wajibFormUrl_(kunciId) {
+  const pendek = prop_({ FORM_TEMPAH_ID: 'LINK_TEMPAH', FORM_BATAL_ID: 'LINK_BATAL' }[kunciId]);
+  return pendek ? pendek.trim() : FormApp.openById(wajib_(kunciId)).getPublishedUrl();
+}
 
 function kalendar_() {
   const c = CalendarApp.getCalendarById(wajib_('CAL_ID'));
@@ -473,7 +477,7 @@ function kalendar_() {
 }
 
 function pautanKalendar_() {
-  return prop_('CALENDAR_LINK') ||
+  return (prop_('CALENDAR_LINK') || '').trim() ||
     ('https://calendar.google.com/calendar/embed?src=' + encodeURIComponent(wajib_('CAL_ID')) + '&ctz=' + CONFIG.TZ);
 }
 

@@ -138,6 +138,13 @@ Studio dibuka 8am–6pm. Mohon batalkan awal jika tak jadi supaya team lain bole
 
 ---
 
+## Pilihan: link pendek (TinyURL, percuma)
+
+1. Buka <https://tinyurl.com>, tampal link panjang, isi **Alias** (cth `studiopertiwi-tempah`), klik **Shorten URL**.
+2. Ulang untuk borang Batal dan kalendar.
+3. Apps Script > Project Settings > Script Properties, tambah: `LINK_TEMPAH`, `LINK_BATAL`, `CALENDAR_LINK` (nilai = link pendek).
+4. Bot terus guna link pendek. Padam property untuk kembali ke link asal.
+
 ## Pilihan: post tepat jam 7:00 (cron-job.org, percuma)
 
 Trigger Apps Script berjalan sembarang masa antara 7:00–8:00. Jika mahu tepat:
