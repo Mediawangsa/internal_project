@@ -327,12 +327,12 @@ function lukisRingkasan_(kualitiPenuh) {
 
   const W = pres.getPageWidth(), H = pres.getPageHeight();
   const k = W / 450; // reka letak asal untuk 450pt lebar; skala ikut saiz halaman sebenar
-  const M = 12 * k, G = 6 * k, Y0 = 74 * k, KEPALA = 24 * k;
+  const M = 12 * k, G = 6 * k, Y0 = 74 * k, KEPALA = 26 * k;
   const n = CONFIG.HARI_IMEJ;
   const tinggiBlok = (H - M - Y0 - G * (n - 1)) / n;
   const MAKS = 6; // baris sehari, termasuk "+N lagi"
   // Lajur: [x relatif, lebar, maks aksara]
-  const LAJUR = { masa: [0, 92 * k, 12], nama: [92 * k, 112 * k, 15], tujuan: [204 * k, W - 2 * M - 204 * k, 32] };
+  const LAJUR = { masa: [0, 100 * k, 12], nama: [100 * k, 140 * k, 18], tujuan: [240 * k, W - 2 * M - 240 * k, 24] };
 
   const hari0 = mulaHari_(new Date());
   const kini = new Date();
@@ -369,7 +369,7 @@ function lukisRingkasan_(kualitiPenuh) {
     jamTeks_(kini, true), M, 4 * k, W - 2 * M, 48 * k, 11, '#5F6368');
   tajuk.getText().getRange(0, 14).getTextStyle().setFontSize(20 * k).setBold(true).setForegroundColor('#202124');
   Object.keys(LAJUR).forEach(function (kunci) {
-    teks_(kunci.toUpperCase(), M + LAJUR[kunci][0], 50 * k, LAJUR[kunci][1], 20 * k, 9, '#80868B', true);
+    teks_(kunci.toUpperCase(), M + LAJUR[kunci][0], 50 * k, LAJUR[kunci][1], 20 * k, 10, '#80868B', true);
   });
 
   for (let i = 0; i < n; i++) {
@@ -383,7 +383,7 @@ function lukisRingkasan_(kualitiPenuh) {
       hariIni ? '#E65100' : null);
     jalur.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
     jalur.getText().setText(HARI[d.getDay()] + ', ' + d.getDate() + ' ' + BULAN[d.getMonth()] + (hariIni ? '  ·  HARI INI' : ''));
-    gaya_(jalur.getText(), 12.5, '#202124', true);
+    gaya_(jalur.getText(), 14, '#202124', true);
 
     // Badan jadual
     const yBadan = y + KEPALA, tBadan = tinggiBlok - KEPALA;
@@ -391,7 +391,7 @@ function lukisRingkasan_(kualitiPenuh) {
 
     const senarai = (timbunan[kunciTarikh_(d)] || []).slice().sort(function (a, b) { return a.getStartTime() - b.getStartTime(); });
     if (!senarai.length) {
-      teks_('Tiada tempahan', M, yBadan, W - 2 * M, tBadan, 12, '#9AA0A6');
+      teks_('Tiada tempahan', M, yBadan, W - 2 * M, tBadan, 13, '#9AA0A6');
       continue;
     }
     let baris = senarai.map(function (ev) {
@@ -407,7 +407,7 @@ function lukisRingkasan_(kualitiPenuh) {
     }
     Object.keys(LAJUR).forEach(function (kunci) {
       const isi = baris.map(function (b) { return potong_(b[kunci], LAJUR[kunci][2]); }).join('\n');
-      teks_(isi, M + LAJUR[kunci][0], yBadan, LAJUR[kunci][1], tBadan, 12,
+      teks_(isi, M + LAJUR[kunci][0], yBadan, LAJUR[kunci][1], tBadan, 14,
         kunci === 'tujuan' ? '#5F6368' : '#202124', kunci === 'masa');
     });
   }
