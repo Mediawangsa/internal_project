@@ -6,7 +6,7 @@
  *   - pasangTrigger()   : pasang trigger form + trigger harian
  *   - onTempahan(e)     : bila ada tempahan baru -> semak bertindih -> cipta event
  *   - onBatal(e)        : bila ada pembatalan -> padam event
- *   - hantarHarian()    : post senarai hari ini + imej 2 minggu ke Telegram
+ *   - hantarHarian()    : post senarai hari ini + imej ringkasan 5 hari ke Telegram
  *   - doGet(e)          : (pilihan) dipanggil oleh cron-job.org untuk tepat 7:00
  *
  * Rahsia (token Telegram dll) JANGAN tulis di sini. Simpan di
@@ -21,7 +21,8 @@ const CONFIG = {
   TUTUP_JAM: 18,               // slot terakhir tamat 6:00pm
   SLOT_MINIT: 30,
   JAM_POST: 7,                 // trigger harian (tetingkap 7-8 pagi)
-  HARI_IMEJ: 14,               // bilangan hari dalam imej (susun 2 lajur)
+  HARI_IMEJ: 5,                // bilangan hari dalam imej ringkasan (bermula hari ini)
+  IMEJ_SELEPAS_TEMPAH: true,   // hantar imej ringkasan selepas setiap tempahan berjaya
   UMUM_TEMPAHAN_BARU: true,    // bot post "✅ ditempah" bila tempahan berjaya
   HANTAR_IMEJ: true,           // false jika guna Cara 2 (GitHub Actions) untuk imej
   HANTAR_FAIL_PENUH: false,    // true = hantar juga fail PNG kualiti penuh
@@ -183,6 +184,13 @@ function prosesTempahan_(nama, tarikhStr, mulaStr, tamatStr, tujuan) {
       '🎯 ' + esc_(tujuan)
     ]));
   }
+  if (CONFIG.HANTAR_IMEJ && CONFIG.IMEJ_SELEPAS_TEMPAH) {
+    try {
+      hantarImej_();
+    } catch (err) {
+      Logger.log('Imej gagal: ' + err); // tempahan sudah berjaya; semak Executions untuk punca
+    }
+  }
   return 'berjaya';
 }
 
@@ -238,7 +246,7 @@ function prosesBatal_(nama, tarikhStr, mulaStr) {
 function hantarHarianTrigger() { hantarHarian(false); }
 
 /**
- * Hantar senarai hari ini (+ imej 2 minggu).
+ * Hantar senarai hari ini (+ imej ringkasan).
  * paksa=true: abaikan semakan "sudah dihantar hari ini" (untuk ujian).
  * Hantaran dihadkan sekali sehari, jadi trigger Apps Script dan cron-job.org boleh wujud serentak.
  */
@@ -279,25 +287,39 @@ function hantarHarian(paksa) {
   return 'dihantar';
 }
 
-// ====================== IMEJ 2 MINGGU (Cara 1: Slides) ======================
+// ====================== IMEJ RINGKASAN (Cara 1: Slides) ======================
 
 function hantarImej_() {
   const mula = mulaHari_(new Date());
-  const tajuk = '📅 Tempahan 2 minggu: ' + tarikhPanjang_(mula) + ' – ' +
+  const tajuk = '📅 Tempahan ' + CONFIG.HARI_IMEJ + ' hari: ' + tarikhPanjang_(mula) + ' – ' +
     tarikhPanjang_(tambahHari_(mula, CONFIG.HARI_IMEJ - 1));
-  const blob = buatImejDuaMinggu_(false);
+  const blob = buatImejRingkasan_(false);
   telegram_('sendPhoto', { chat_id: wajib_('TELEGRAM_CHAT_ID'), photo: blob, caption: tajuk });
   if (CONFIG.HANTAR_FAIL_PENUH) {
     telegram_('sendDocument', {
       chat_id: wajib_('TELEGRAM_CHAT_ID'),
-      document: buatImejDuaMinggu_(true).setName('studio-pertiwi-2minggu-penuh.png'),
+      document: buatImejRingkasan_(true).setName('studio-pertiwi-ringkasan-penuh.png'),
       caption: 'Fail kualiti penuh'
     });
   }
 }
 
-/** Lukis slide dari data Calendar Studio Pertiwi SAHAJA, kembalikan PNG. */
-function buatImejDuaMinggu_(kualitiPenuh) {
+/**
+ * Lukis jadual dari data Calendar Studio Pertiwi SAHAJA, kembalikan PNG.
+ * Satu blok sehari; dalam blok, 3 lajur: Masa | Nama | Tujuan.
+ * Dikunci: hanya satu imej dilukis pada satu masa (slide yang sama dikongsi).
+ */
+function buatImejRingkasan_(kualitiPenuh) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(60000);
+  try {
+    return lukisRingkasan_(kualitiPenuh);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function lukisRingkasan_(kualitiPenuh) {
   const pres = SlidesApp.openById(wajib_('SLIDES_ID'));
   const slide = pres.getSlides()[0];
   slide.getPageElements().forEach(function (p) { p.remove(); });
@@ -305,61 +327,89 @@ function buatImejDuaMinggu_(kualitiPenuh) {
 
   const W = pres.getPageWidth(), H = pres.getPageHeight();
   const k = W / 450; // reka letak asal untuk 450pt lebar; skala ikut saiz halaman sebenar
-  const M = 12 * k, G = 6 * k, Y0 = 58 * k;
+  const M = 12 * k, G = 6 * k, Y0 = 74 * k, KEPALA = 24 * k;
   const n = CONFIG.HARI_IMEJ;
-  const baris = Math.ceil(n / 2);
-  const lebar = (W - 2 * M - G) / 2;
-  const tinggi = (H - M - Y0 - G * (baris - 1)) / baris;
+  const tinggiBlok = (H - M - Y0 - G * (n - 1)) / n;
+  const MAKS = 6; // baris sehari, termasuk "+N lagi"
+  // Lajur: [x relatif, lebar, maks aksara]
+  const LAJUR = { masa: [0, 92 * k, 12], nama: [92 * k, 112 * k, 15], tujuan: [204 * k, W - 2 * M - 204 * k, 32] };
 
   const hari0 = mulaHari_(new Date());
   const kini = new Date();
   const timbunan = {}; // 'yyyy-MM-dd' -> [event]
   acaraAntara_(hari0, tambahHari_(hari0, n)).forEach(function (ev) {
-    const k = kunciTarikh_(ev.getStartTime());
-    (timbunan[k] = timbunan[k] || []).push(ev);
+    const kunci = kunciTarikh_(ev.getStartTime());
+    (timbunan[kunci] = timbunan[kunci] || []).push(ev);
   });
 
-  // Tajuk
-  const tajuk = slide.insertTextBox('STUDIO PERTIWI\nTempahan ' + n + ' hari · kemas kini ' +
-    tarikhPanjang_(kini) + ', ' + jamTeks_(kini, true), M, 6 * k, W - 2 * M, 48 * k);
-  const tt = tajuk.getText();
-  tt.getTextStyle().setFontFamily('Roboto').setFontSize(11 * k).setForegroundColor('#5F6368');
-  tt.getRange(0, 14).getTextStyle().setFontSize(20 * k).setBold(true).setForegroundColor('#202124');
+  function gaya_(tr, saiz, warna, tebal) {
+    tr.getTextStyle().setFontFamily('Roboto').setFontSize(saiz * k).setForegroundColor(warna).setBold(!!tebal);
+    tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.START);
+  }
+  function teks_(isi, x, y, w, h, saiz, warna, tebal) {
+    const kotak = slide.insertTextBox(isi, x, y, w, h);
+    kotak.setContentAlignment(SlidesApp.ContentAlignment.TOP);
+    gaya_(kotak.getText(), saiz, warna, tebal);
+    return kotak;
+  }
+  function segi_(x, y, w, h, isi, garis) {
+    const s = slide.insertShape(SlidesApp.ShapeType.RECTANGLE, x, y, w, h);
+    s.getFill().setSolidFill(isi);
+    if (garis) {
+      s.getBorder().getLineFill().setSolidFill(garis);
+      s.getBorder().setWeight(2 * k);
+    } else {
+      s.getBorder().setTransparent();
+    }
+    return s;
+  }
+
+  // Tajuk + label lajur
+  const tajuk = teks_('STUDIO PERTIWI\nTempahan ' + n + ' hari · kemas kini ' + tarikhPanjang_(kini) + ', ' +
+    jamTeks_(kini, true), M, 4 * k, W - 2 * M, 48 * k, 11, '#5F6368');
+  tajuk.getText().getRange(0, 14).getTextStyle().setFontSize(20 * k).setBold(true).setForegroundColor('#202124');
+  Object.keys(LAJUR).forEach(function (kunci) {
+    teks_(kunci.toUpperCase(), M + LAJUR[kunci][0], 50 * k, LAJUR[kunci][1], 20 * k, 9, '#80868B', true);
+  });
 
   for (let i = 0; i < n; i++) {
     const d = tambahHari_(hari0, i);
     const hariIni = i === 0;
     const hujungMgg = d.getDay() === 0 || d.getDay() === 6;
-    const x = M + Math.floor(i / baris) * (lebar + G);
-    const y = Y0 + (i % baris) * (tinggi + G);
+    const y = Y0 + i * (tinggiBlok + G);
 
-    const kotak = slide.insertShape(SlidesApp.ShapeType.RECTANGLE, x, y, lebar, tinggi);
-    kotak.getFill().setSolidFill(hariIni ? '#FFE08A' : hujungMgg ? '#E8EAFD' : '#F1F3F4');
-    if (hariIni) {
-      kotak.getBorder().getLineFill().setSolidFill('#E65100');
-      kotak.getBorder().setWeight(2.5 * k);
-    } else {
-      kotak.getBorder().setTransparent();
-    }
-    kotak.setContentAlignment(SlidesApp.ContentAlignment.TOP);
+    // Jalur tarikh
+    const jalur = segi_(M, y, W - 2 * M, KEPALA, hariIni ? '#FFE08A' : hujungMgg ? '#DDE1FB' : '#E8EAED',
+      hariIni ? '#E65100' : null);
+    jalur.setContentAlignment(SlidesApp.ContentAlignment.MIDDLE);
+    jalur.getText().setText(HARI[d.getDay()] + ', ' + d.getDate() + ' ' + BULAN[d.getMonth()] + (hariIni ? '  ·  HARI INI' : ''));
+    gaya_(jalur.getText(), 12.5, '#202124', true);
 
-    const tajukKotak = HARI_PENDEK[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + (hariIni ? '  · HARI INI' : '');
+    // Badan jadual
+    const yBadan = y + KEPALA, tBadan = tinggiBlok - KEPALA;
+    segi_(M, yBadan, W - 2 * M, tBadan, hujungMgg ? '#F5F6FE' : '#F8F9FA', null);
+
     const senarai = (timbunan[kunciTarikh_(d)] || []).slice().sort(function (a, b) { return a.getStartTime() - b.getStartTime(); });
-    const MAKS = 4; // termasuk baris "+N lagi"
-    let baris_ = senarai.map(function (ev) { return ringkas_(ev); });
-    if (baris_.length > MAKS) {
-      const lebih = baris_.length - (MAKS - 1);
-      baris_ = baris_.slice(0, MAKS - 1).concat(['+' + lebih + ' lagi']);
+    if (!senarai.length) {
+      teks_('Tiada tempahan', M, yBadan, W - 2 * M, tBadan, 12, '#9AA0A6');
+      continue;
     }
-    const kosong = !baris_.length;
-    const teks = tajukKotak + '\n' + (kosong ? '–' : baris_.join('\n'));
-
-    const tr = kotak.getText();
-    tr.setText(teks);
-    tr.getParagraphStyle().setParagraphAlignment(SlidesApp.ParagraphAlignment.START);
-    tr.getTextStyle().setFontFamily('Roboto').setFontSize(13 * k).setBold(false)
-      .setForegroundColor(kosong ? '#9AA0A6' : '#202124');
-    tr.getRange(0, tajukKotak.length).getTextStyle().setBold(true).setFontSize(14 * k).setForegroundColor('#202124');
+    let baris = senarai.map(function (ev) {
+      return {
+        masa: ev.isAllDayEvent() ? 'Sehari' : jamTeks_(ev.getStartTime(), false) + '–' + jamTeks_(ev.getEndTime(), false),
+        nama: ev.getTag('nama') || ev.getTitle(),
+        tujuan: ev.getTag('tujuan') || ''
+      };
+    });
+    if (baris.length > MAKS) {
+      const lebih = baris.length - (MAKS - 1);
+      baris = baris.slice(0, MAKS - 1).concat([{ masa: '', nama: '+' + lebih + ' lagi', tujuan: '' }]);
+    }
+    Object.keys(LAJUR).forEach(function (kunci) {
+      const isi = baris.map(function (b) { return potong_(b[kunci], LAJUR[kunci][2]); }).join('\n');
+      teks_(isi, M + LAJUR[kunci][0], yBadan, LAJUR[kunci][1], tBadan, 12,
+        kunci === 'tujuan' ? '#5F6368' : '#202124', kunci === 'masa');
+    });
   }
 
   const slideId = slide.getObjectId();
@@ -370,19 +420,13 @@ function buatImejDuaMinggu_(kualitiPenuh) {
     'thumbnailProperties.mimeType': 'PNG',
     'thumbnailProperties.thumbnailSize': kualitiPenuh ? 'LARGE' : 'MEDIUM' // MEDIUM = lebar 800px
   });
-  return UrlFetchApp.fetch(lakar.contentUrl).getBlob().setName('studio-pertiwi-2minggu.png');
+  return UrlFetchApp.fetch(lakar.contentUrl).getBlob().setName('studio-pertiwi-ringkasan.png');
 }
 
-/** "11-2 Nourani" */
-function ringkas_(ev) {
-  if (ev.isAllDayEvent()) return 'Sehari ' + pendekNama_(ev);
-  return jamTeks_(ev.getStartTime(), false) + '-' + jamTeks_(ev.getEndTime(), false) + ' ' + pendekNama_(ev);
-}
-
-function pendekNama_(ev) {
-  const nama = ev.getTag('nama') || ev.getTitle();
-  const s = String(nama).trim().split(/\s+/)[0];
-  return s.length > 14 ? s.slice(0, 13) + '…' : s;
+/** Pendekkan teks supaya muat sebaris dalam lajur (tiada balut baris). */
+function potong_(s, maks) {
+  s = String(s || '').replace(/\s+/g, ' ').trim();
+  return s.length > maks ? s.slice(0, maks - 1) + '…' : s;
 }
 
 // ====================== WEB APP (pilihan: cron-job.org) ======================
@@ -449,7 +493,7 @@ function ujiBatal() { Logger.log(prosesBatal_('Ujian', tarikhEsok_(), '2:00pm'))
 function ujiHantarHarian() { Logger.log(hantarHarian(true)); }
 /** Hanya jana imej, simpan dalam Drive untuk semak rupa & saiz fail. */
 function ujiImej() {
-  const blob = buatImejDuaMinggu_(false);
+  const blob = buatImejRingkasan_(false);
   const f = DriveApp.createFile(blob);
   Logger.log('Imej disimpan: ' + f.getUrl() + ' (' + Math.round(blob.getBytes().length / 1024) + ' KB)');
 }

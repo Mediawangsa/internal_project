@@ -11,7 +11,7 @@ Semua guna akaun Google syarikat + Telegram. Tiada bayaran, tiada subscription.
 | Form **Batal Tempahan** | Nama, Tarikh, Masa mula |
 | Calendar **Studio Pertiwi** | Satu tempat tengok semua tempahan (view-only untuk team) |
 | Bot Telegram | Sahkan tempahan, tolak jika bertindih, umum pembatalan |
-| Post harian ~7 pagi | Senarai hari ini + imej ringkasan 2 minggu |
+| Post harian ~7 pagi | Senarai hari ini + imej jadual 5 hari (juga selepas setiap tempahan berjaya) |
 
 Keputusan yang saya guna (ubah di bahagian `CONFIG` dalam `Kod.gs` jika perlu):
 - Slot 30 minit, **8:00am – 6:00pm**. Tempahan dibuka 7 hari seminggu dengan waktu sama. Jika Sabtu/Ahad waktu lain, beritahu saya.
@@ -95,8 +95,8 @@ Buat mengikut urutan. Selepas setiap satu, semak group Telegram dan Calendar.
 | 1 | Run `ujiTempahan` | Group: "✅ Studio ditempah ... Ujian sistem (Ujian)". Calendar: event esok 2–3pm |
 | 2 | Run `ujiBertindih` | Group: "❌ Ujian2: ... bertindih dengan Ujian sistem (Ujian) ...". Tiada event baru |
 | 3 | Run `ujiBatal` | Group: "🗑 Tempahan Ujian dibatalkan". Event hilang |
-| 4 | Run `ujiImej` | Log beri link imej dalam Drive + saiz KB. Buka: portrait, 14 kotak, hari ini kuning. Jika >200KB, rujuk Masalah lazim |
-| 5 | Run `ujiTempahan` lagi, kemudian `ujiHantarHarian` | Group terima senarai hari ini (hari ini mungkin "Tiada tempahan") + foto 2 minggu. Esok nampak "Ujian" |
+| 4 | Run `ujiImej` | Log beri link imej dalam Drive + saiz KB. Buka: portrait, jadual 5 hari (Masa | Nama | Tujuan), hari ini kuning. Jika >200KB, rujuk Masalah lazim |
+| 5 | Run `ujiTempahan` lagi, kemudian `ujiHantarHarian` | Group terima senarai hari ini (hari ini mungkin "Tiada tempahan") + foto jadual 5 hari. Esok nampak "Ujian" |
 | 6 | **Ujian sebenar guna Borang**: buka link borang tempah di phone, tempah 4pm–5pm lusa | Bot sahkan dalam ± 1 minit |
 | 7 | Isi borang tempah lagi, masa bertindih (cth 4:30pm–5:30pm) | Bot tolak |
 | 8 | Borang tempah: masa tamat sebelum mula | Bot tolak "masa tamat mesti selepas" |
@@ -132,7 +132,7 @@ Cara guna:
 3. Kalau ada hal, isi borang "Batal tempahan" (nama, tarikh, masa mula sama seperti tempahan asal)
 
 Tip: masa yang sama tak boleh ditempah dua kali. Semak calendar dulu untuk slot kosong.
-Setiap pagi (~7 pagi) bot post tempahan hari itu + gambar ringkasan 2 minggu.
+Setiap pagi (~7 pagi) bot post tempahan hari itu + gambar jadual 5 hari. Gambar sama juga dihantar selepas setiap tempahan berjaya..
 Studio dibuka 8am–6pm. Mohon batalkan awal jika tak jadi supaya team lain boleh guna 🙏
 ```
 
