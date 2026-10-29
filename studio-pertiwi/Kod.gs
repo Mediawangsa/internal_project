@@ -331,8 +331,9 @@ function lukisRingkasan_(kualitiPenuh) {
   const n = CONFIG.HARI_IMEJ;
   const tinggiBlok = (H - M - Y0 - G * (n - 1)) / n;
   const MAKS = 6; // baris sehari, termasuk "+N lagi"
-  // Lajur: [x relatif, lebar, maks aksara]
-  const LAJUR = { masa: [0, 100 * k, 12], nama: [100 * k, 140 * k, 18], tujuan: [240 * k, W - 2 * M - 240 * k, 24] };
+  // Lajur: [x relatif, lebar]
+  const LAJUR = { masa: [0, 96 * k], nama: [96 * k, 150 * k], tujuan: [246 * k, W - 2 * M - 246 * k] };
+  const SAIZ = 14;
 
   const hari0 = mulaHari_(new Date());
   const kini = new Date();
@@ -406,8 +407,9 @@ function lukisRingkasan_(kualitiPenuh) {
       baris = baris.slice(0, MAKS - 1).concat([{ masa: '', nama: '+' + lebih + ' lagi', tujuan: '' }]);
     }
     Object.keys(LAJUR).forEach(function (kunci) {
-      const isi = baris.map(function (b) { return potong_(b[kunci], LAJUR[kunci][2]); }).join('\n');
-      teks_(isi, M + LAJUR[kunci][0], yBadan, LAJUR[kunci][1], tBadan, 14,
+      const ruang = LAJUR[kunci][1] - 14.4 * k; // tolak jarak dalam kotak teks (7.2pt kiri + kanan)
+      const isi = baris.map(function (b) { return kunci === 'masa' ? b.masa : potong_(b[kunci], ruang, SAIZ * k); }).join('\n');
+      teks_(isi, M + LAJUR[kunci][0], yBadan, LAJUR[kunci][1], tBadan, SAIZ,
         kunci === 'tujuan' ? '#5F6368' : '#202124', kunci === 'masa');
     });
   }
@@ -423,10 +425,32 @@ function lukisRingkasan_(kualitiPenuh) {
   return UrlFetchApp.fetch(lakar.contentUrl).getBlob().setName('studio-pertiwi-ringkasan.png');
 }
 
-/** Pendekkan teks supaya muat sebaris dalam lajur (tiada balut baris). */
-function potong_(s, maks) {
+/**
+ * Pendekkan teks supaya muat SEBARIS dalam lajur (Slides akan lipat baris jika terlebih,
+ * dan baris dalam lajur lain jadi tak sebaris). Lebar dianggar ikut bentuk huruf Roboto.
+ */
+function potong_(s, lebarPt, saizPt, tebal) {
   s = String(s || '').replace(/\s+/g, ' ').trim();
-  return s.length > maks ? s.slice(0, maks - 1) + '…' : s;
+  const had = lebarPt * 0.95; // ruang selamat 5%
+  const lebar = function (t) {
+    let em = 0;
+    for (let i = 0; i < t.length; i++) em += lebarHuruf_(t.charAt(i));
+    return em * saizPt * (tebal ? 1.05 : 1);
+  };
+  if (lebar(s) <= had) return s;
+  while (s && lebar(s + '…') > had) s = s.slice(0, -1);
+  return s.trim() + '…';
+}
+
+/** Anggaran lebar satu huruf (unit em) untuk Roboto. */
+function lebarHuruf_(c) {
+  if (c === ' ') return 0.25;
+  if ('ijlI.,:;\'!|'.indexOf(c) >= 0) return 0.26;
+  if ('ft()[]-'.indexOf(c) >= 0) return 0.34;
+  if ('mwMW@'.indexOf(c) >= 0) return 0.88;
+  if (/[0-9]/.test(c)) return 0.57;
+  if (/[A-Z&]/.test(c)) return 0.68;
+  return 0.52;
 }
 
 // ====================== WEB APP (pilihan: cron-job.org) ======================
